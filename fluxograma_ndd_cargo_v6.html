@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Fluxograma Interativo — NDD Cargo</title>
+<style>
+:root{
+  --bg:#08111f; --panel:#0e1b2e; --card:#13243b; --card2:#172b46;
+  --line:#7dd3fc; --text:#e6f1ff; --muted:#9fb4cc; --accent:#38bdf8;
+  --auto:#22c55e; --warn:#f59e0b; --manual:#f59e0b; --erp:#a855f7;
+}
+*{box-sizing:border-box}
+body{
+  margin:0; min-height:100vh; background:
+  radial-gradient(circle at 20% 10%, #173257 0, transparent 34%),
+  radial-gradient(circle at 82% 28%, #0f766e44 0, transparent 28%),
+  linear-gradient(135deg,#050b15,#0b1425 45%,#09111f);
+  color:var(--text); font-family:Inter,Segoe UI,Roboto,Arial,sans-serif;
+}
+.wrap{width:100vw;max-width:none;margin:0;padding:24px;overflow:visible}
+.header{display:flex;justify-content:space-between;gap:20px;align-items:flex-start;margin-bottom:18px}
+h1{font-size:clamp(22px,3vw,36px);margin:0 0 8px;font-weight:800;letter-spacing:-.03em}
+p{margin:0;color:var(--muted);line-height:1.45}
+.controls{
+  display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end;justify-content:flex-end;
+}
+.controlGroup{
+  border:1px solid #284565;background:#0d1a2c;border-radius:18px;padding:12px;
+  min-width:210px;
+}
+.controlGroup label{
+  display:block;font-size:12px;color:#9fcfff;font-weight:800;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;
+}
+select{
+  width:100%;appearance:none;border:1px solid #315575;background:#071426;color:#e6f1ff;
+  border-radius:12px;padding:10px 12px;font-size:15px;font-weight:800;outline:none;
+}
+select:focus{border-color:#38bdf8;box-shadow:0 0 0 2px rgba(56,189,248,.18)}
+.reset{
+  appearance:none;border:1px solid #315575;background:#0c1a2c;color:#dbeafe;border-radius:14px;
+  padding:12px 16px;font-weight:800;cursor:pointer
+}
+.reset:hover{border-color:#38bdf8}
+
+.canvas{
+  position:relative; overflow:auto; border:0; border-radius:0;
+  background:linear-gradient(180deg,rgba(13,27,46,.82),rgba(8,17,31,.92));
+  box-shadow:none; padding:52px 64px; min-height:calc(100vh - 126px); width:100%;
+}
+.flow{position:relative; min-width:2240px; height:760px;}
+.card{
+  position:absolute; width:210px; min-height:126px; border-radius:20px; padding:18px 17px;
+  background:linear-gradient(180deg,var(--card2),var(--card));
+  border:1px solid #284765; box-shadow:0 16px 35px rgba(0,0,0,.28);
+  display:flex; flex-direction:column; justify-content:center; align-items:center;
+  text-align:center; transition:.25s ease; cursor:default;
+}
+.card .title{font-weight:800;font-size:22.5px;line-height:1.12}
+.card .sub{font-size:18px;color:var(--muted);margin-top:9px;line-height:1.22}
+.card.manual{
+  border-color:#f59e0b;
+  background:linear-gradient(180deg,#3b2612,#23180d);
+  box-shadow:0 0 0 2px rgba(245,158,11,.16),0 18px 44px rgba(245,158,11,.10);
+}
+.card.manual::after{
+  content:"Manual";
+  position:absolute; top:-12px; right:14px; padding:4px 9px; border-radius:999px;
+  background:#3b2607; border:1px solid #f59e0b; color:#fde68a; font-size:12px; font-weight:800;
+}
+.card.auto{
+  border-color:#22c55e;
+  background:linear-gradient(180deg,#123b2a,#0d2b22);
+  box-shadow:0 0 0 2px rgba(34,197,94,.18),0 18px 44px rgba(34,197,94,.12);
+}
+.card.auto::after{
+  content:"NDD Cargo";
+  position:absolute; top:-12px; right:14px; padding:4px 9px; border-radius:999px;
+  background:#052e1a; border:1px solid #22c55e; color:#bbf7d0; font-size:12px; font-weight:800;
+}
+.card.erp{
+  border-color:#a855f7;
+  background:linear-gradient(180deg,#2b1948,#1d1234);
+  box-shadow:0 0 0 2px rgba(168,85,247,.18),0 18px 44px rgba(168,85,247,.12);
+}
+.card.erp::after{
+  content:"Cliente";
+  position:absolute; top:-12px; right:14px; padding:4px 9px; border-radius:999px;
+  background:#24103e; border:1px solid #a855f7; color:#e9d5ff; font-size:12px; font-weight:800;
+}
+.hidden{opacity:0;pointer-events:none;transform:scale(.92)}
+.start{left:20px;top:304px;width:150px;min-height:112px}
+.portalUser{left:240px;top:214px}
+.portalCargo{left:520px;top:214px}
+.erpClient{left:240px;top:404px}
+.integrationCargo{left:520px;top:404px}
+.data{left:820px;top:304px;width:240px}
+.validate{left:1130px;top:304px;width:240px}
+.stepCiot{left:1440px;top:150px}
+.stepPay{left:1440px;top:304px}
+.stepVpo{left:1440px;top:458px}
+.status{left:1740px;top:304px;width:240px}
+.end{left:2050px;top:304px;width:150px;min-height:112px}
+
+svg.arrows{position:absolute;left:0;top:0;width:2240px;height:720px;pointer-events:none;overflow:visible}
+path,line{stroke:var(--line);stroke-width:4;fill:none;filter:drop-shadow(0 0 5px rgba(125,211,252,.25));transition:.25s ease}
+path.autoLine,line.autoLine{stroke:var(--auto);stroke-width:5;filter:drop-shadow(0 0 7px rgba(34,197,94,.3))}
+path.manualLine,line.manualLine{stroke:var(--manual);stroke-width:5;filter:drop-shadow(0 0 7px rgba(245,158,11,.28))}
+path.erpLine,line.erpLine{stroke:var(--erp);stroke-width:5;filter:drop-shadow(0 0 7px rgba(168,85,247,.28))}
+path.hidden,line.hidden{opacity:0}
+.note{
+  position:absolute;left:820px;top:575px;width:470px;border:1px dashed #2c5c4a;border-radius:18px;padding:16px 18px;
+  background:rgba(5,46,26,.28);color:#c9fdda;font-size:17px;line-height:1.36;
+}
+.note b{color:#86efac}
+.serviceTag{
+  position:absolute;left:1440px;top:96px;width:520px;color:#9fcfff;font-size:15px;font-weight:800;
+  text-transform:uppercase;letter-spacing:.06em;
+}
+@media(max-width:760px){
+  .wrap{padding:14px}
+  .header{display:block}
+  .controls{justify-content:flex-start;margin-top:14px}
+  .controlGroup{min-width:100%}
+  .canvas{padding:28px 26px;min-height:calc(100vh - 220px)}
+  .flow{transform-origin:0 0; transform:scale(.64); height:1080px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="header">
+    <div>
+      <h1>Fluxograma Interativo — NDD Cargo</h1>
+      <p>Escolha os parâmetros acima. O fluxograma abaixo mostra somente o processo correspondente.</p>
+    </div>
+    <div class="controls">
+      <div class="controlGroup">
+        <label for="originSelect">Origem da emissão</label>
+        <select id="originSelect" onchange="applyFlow()">
+          <option value="portal">Portal</option>
+          <option value="integracao">Integração</option>
+        </select>
+      </div>
+      <div class="controlGroup">
+        <label for="modelSelect">Modelo de emissão</label>
+        <select id="modelSelect" onchange="applyFlow()">
+          <option value="geral">Geral</option>
+          <option value="especifico">Específico</option>
+          <option value="especifico-lotacao">Específico + Lotação</option>
+        </select>
+      </div>
+      <div class="controlGroup">
+        <label for="serviceSelect">O que emitir</label>
+        <select id="serviceSelect" onchange="applyFlow()">
+          <option value="geral">CIOT + Pagamento + VPO</option>
+          <option value="ciot-pagamento">CIOT + Pagamento</option>
+          <option value="ciot-vpo">CIOT + VPO</option>
+          <option value="ciot">Somente CIOT</option>
+          <option value="vpo">Somente VPO</option>
+        </select>
+      </div>
+      <button class="reset" onclick="resetFlow()">Padrão</button>
+    </div>
+  </div>
+
+  <div class="canvas">
+    <div class="flow" id="flow">
+      <svg class="arrows" viewBox="0 0 2240 720" preserveAspectRatio="xMinYMin meet">
+        <defs>
+          <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L9,3 z" fill="#7dd3fc"/>
+          </marker>
+          <marker id="arrowAuto" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L9,3 z" fill="#22c55e"/>
+          </marker>
+          <marker id="arrowManual" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L9,3 z" fill="#f59e0b"/>
+          </marker>
+          <marker id="arrowErp" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L9,3 z" fill="#a855f7"/>
+          </marker>
+        </defs>
+
+        <path id="l-start-portal" class="manualLine" d="M170 360 C200 360, 205 277, 240 277" marker-end="url(#arrowManual)"/>
+        <path id="l-start-int" class="erpLine" d="M170 360 C200 360, 205 467, 240 467" marker-end="url(#arrowErp)"/>
+
+        <path id="l-user-portal" class="manualLine" d="M450 277 L520 277" marker-end="url(#arrowManual)"/>
+        <path id="l-erp-cargo" class="erpLine" d="M450 467 L520 467" marker-end="url(#arrowErp)"/>
+
+        <path id="l-portal-data" class="manualLine" d="M730 277 C770 277, 775 360, 820 360" marker-end="url(#arrowManual)"/>
+        <path id="l-int-data" class="autoLine" d="M730 467 C770 467, 775 360, 820 360" marker-end="url(#arrowAuto)"/>
+
+        <path id="l-data-val" class="autoLine" d="M1060 360 L1130 360" marker-end="url(#arrowAuto)"/>
+
+        <path id="l-val-ciot" class="autoLine" d="M1370 360 C1405 360, 1405 213, 1440 213" marker-end="url(#arrowAuto)"/>
+        <path id="l-val-pay" class="autoLine" d="M1370 360 L1440 360" marker-end="url(#arrowAuto)"/>
+        <path id="l-val-vpo" class="autoLine" d="M1370 360 C1405 360, 1405 521, 1440 521" marker-end="url(#arrowAuto)"/>
+
+        <path id="l-ciot-status" class="autoLine" d="M1650 213 C1700 213, 1700 360, 1740 360" marker-end="url(#arrowAuto)"/>
+        <path id="l-pay-status" class="autoLine" d="M1650 360 L1740 360" marker-end="url(#arrowAuto)"/>
+        <path id="l-vpo-status" class="autoLine" d="M1650 521 C1700 521, 1700 360, 1740 360" marker-end="url(#arrowAuto)"/>
+
+        <path id="l-status-end" d="M1980 360 L2050 360" marker-end="url(#arrow)"/>
+      </svg>
+
+      <div class="card start"><div class="title">Início</div><div class="sub">Demanda de transporte</div></div>
+
+      <div class="card manual portalUser"><div class="title">Usuário</div><div class="sub">Acessa e opera manualmente</div></div>
+      <div class="card manual portalCargo"><div class="title">Portal NDD Cargo</div><div class="sub">Preenchimento e acionamento manual</div></div>
+
+      <div class="card erp erpClient"><div class="title">TMS/ERP do cliente</div><div class="sub">Envia os dados da operação</div></div>
+      <div class="card auto integrationCargo"><div class="title">NDD Cargo</div><div class="sub">Recebe a operação por integração</div></div>
+
+      <div class="card data"><div class="title">Dados da operação</div><div class="sub" id="dataSub">Viagem, carga, transportador, frete e pedágio quando houver</div></div>
+
+      <div class="card auto validate"><div class="title">Validar operação</div><div class="sub" id="validateSub">RNTRC, dados obrigatórios, regras ANTT e saldo quando aplicável</div></div>
+
+      <div class="serviceTag" id="serviceTag">Serviços selecionados: CIOT + Pagamento + VPO</div>
+      <div class="card auto stepCiot" data-step="ciot"><div class="title">Gerar CIOT</div><div class="sub">Registro e retorno do identificador</div></div>
+      <div class="card auto stepPay" data-step="pagamento"><div class="title">Programar pagamento</div><div class="sub">Frete, parcelas e forma de liquidação</div></div>
+      <div class="card auto stepVpo" data-step="vpo"><div class="title">Comprar VPO</div><div class="sub">Vale-pedágio por TAG ou cartão</div></div>
+
+      <div class="card auto status"><div class="title">Atualizar status</div><div class="sub">Retorno, comprovantes e acompanhamento</div></div>
+      <div class="card end"><div class="title">Fim</div><div class="sub">Operação concluída</div></div>
+
+      <div class="note" id="modeNote"><b>Integração:</b> o TMS/ERP do cliente envia os dados ao NDD Cargo. Após o recebimento, o processamento ocorre sem ação operacional manual.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+const serviceMap = {
+  "geral": {label:"CIOT + Pagamento + VPO", steps:["ciot","pagamento","vpo"], lines:["l-val-ciot","l-val-pay","l-val-vpo","l-ciot-status","l-pay-status","l-vpo-status"]},
+  "ciot-pagamento": {label:"CIOT + Pagamento", steps:["ciot","pagamento"], lines:["l-val-ciot","l-val-pay","l-ciot-status","l-pay-status"]},
+  "ciot-vpo": {label:"CIOT + VPO", steps:["ciot","vpo"], lines:["l-val-ciot","l-val-vpo","l-ciot-status","l-vpo-status"]},
+  "ciot": {label:"Somente CIOT", steps:["ciot"], lines:["l-val-ciot","l-ciot-status"]},
+  "vpo": {label:"Somente VPO", steps:["vpo"], lines:["l-val-vpo","l-vpo-status"]}
+};
+
+function setHidden(selector, hidden){
+  document.querySelectorAll(selector).forEach(el=>el.classList.toggle("hidden", hidden));
+}
+function applyFlow(){
+  const origin = document.getElementById("originSelect").value;
+  const model = document.getElementById("modelSelect").value;
+  const service = document.getElementById("serviceSelect").value;
+  const cfg = serviceMap[service];
+
+  const isPortal = origin === "portal";
+  setHidden(".portalUser,.portalCargo,#l-start-portal,#l-user-portal,#l-portal-data", !isPortal);
+  setHidden(".erpClient,.integrationCargo,#l-start-int,#l-erp-cargo,#l-int-data", isPortal);
+
+  document.querySelectorAll("[data-step]").forEach(el=>{
+    el.classList.toggle("hidden", !cfg.steps.includes(el.dataset.step));
+  });
+
+  document.querySelectorAll("#l-val-ciot,#l-val-pay,#l-val-vpo,#l-ciot-status,#l-pay-status,#l-vpo-status").forEach(el=>{
+    el.classList.toggle("hidden", !cfg.lines.includes(el.id));
+  });
+
+  document.getElementById("serviceTag").textContent = "Serviços selecionados: " + cfg.label;
+
+  const modelLabel = {
+    "geral":"Geral",
+    "especifico":"Específico",
+    "especifico-lotacao":"Específico + Lotação"
+  }[model];
+
+  if(isPortal){
+    document.getElementById("dataSub").textContent = "Informado manualmente pelo usuário no Portal";
+    document.getElementById("validateSub").textContent = "Validação após acionamento manual no Portal";
+    document.getElementById("modeNote").innerHTML = `<b>Portal:</b> modelo ${modelLabel} com ${cfg.label}. O usuário acessa o Portal NDD Cargo, informa os dados e aciona manualmente emissão, pagamento e/ou VPO conforme o serviço selecionado.`;
+    document.querySelectorAll(".stepCiot,.stepPay,.stepVpo").forEach(el=>{
+      el.classList.remove("auto");
+      el.classList.add("manual");
+    });
+    document.querySelectorAll("#l-data-val,#l-val-ciot,#l-val-pay,#l-val-vpo").forEach(el=>{
+      el.classList.remove("autoLine"); el.classList.add("manualLine"); el.setAttribute("marker-end","url(#arrowManual)");
+    });
+  } else {
+    document.getElementById("dataSub").textContent = "Recebido automaticamente do TMS/ERP do cliente";
+    document.getElementById("validateSub").textContent = "Validação automática após recebimento dos dados";
+    document.getElementById("modeNote").innerHTML = `<b>Integração:</b> modelo ${modelLabel} com ${cfg.label}. O TMS/ERP do cliente se conecta ao NDD Cargo e envia a operação. Após o recebimento, o processamento segue sem ação operacional manual.`;
+    document.querySelectorAll(".stepCiot,.stepPay,.stepVpo").forEach(el=>{
+      el.classList.remove("manual");
+      el.classList.add("auto");
+    });
+    document.querySelectorAll("#l-data-val,#l-val-ciot,#l-val-pay,#l-val-vpo").forEach(el=>{
+      el.classList.remove("manualLine"); el.classList.add("autoLine"); el.setAttribute("marker-end","url(#arrowAuto)");
+    });
+  }
+}
+function resetFlow(){
+  document.getElementById("originSelect").value = "portal";
+  document.getElementById("modelSelect").value = "geral";
+  document.getElementById("serviceSelect").value = "geral";
+  applyFlow();
+}
+applyFlow();
+</script>
+</body>
+</html>
