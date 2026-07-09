@@ -107,7 +107,19 @@ path,line{stroke:var(--line);stroke-width:4;fill:none;filter:drop-shadow(0 0 5px
 path.autoLine,line.autoLine{stroke:var(--auto);stroke-width:5;filter:drop-shadow(0 0 7px rgba(34,197,94,.3))}
 path.manualLine,line.manualLine{stroke:var(--manual);stroke-width:5;filter:drop-shadow(0 0 7px rgba(245,158,11,.28))}
 path.erpLine,line.erpLine{stroke:var(--erp);stroke-width:5;filter:drop-shadow(0 0 7px rgba(168,85,247,.28))}
-path.hidden,line.hidden{opacity:0}
+path.hidden,line.hidden,text.hidden{opacity:0}
+.returnLine{
+  stroke:#a855f7;
+  stroke-width:4;
+  stroke-dasharray:10 8;
+  fill:none;
+  filter:drop-shadow(0 0 8px rgba(168,85,247,.35));
+}
+.returnLabel{
+  fill:#e9d5ff;
+  font-size:18px;
+  font-weight:800;
+}
 .note{
   position:absolute;left:820px;top:575px;width:470px;border:1px dashed #2c5c4a;border-radius:18px;padding:16px 18px;
   background:rgba(5,46,26,.28);color:#c9fdda;font-size:17px;line-height:1.36;
@@ -202,6 +214,12 @@ path.hidden,line.hidden{opacity:0}
         <path id="l-vpo-status" class="autoLine" d="M1650 521 C1700 521, 1700 360, 1740 360" marker-end="url(#arrowAuto)"/>
 
         <path id="l-status-end" d="M1980 360 L2050 360" marker-end="url(#arrow)"/>
+
+        <!-- Indicação de retorno para integração: sem criar card novo -->
+        <path id="l-return-tms" class="returnLine hidden" d="M1860 304 C1860 70, 355 70, 355 404" marker-end="url(#arrowErp)"/>
+        <text id="txt-return-tms" class="returnLabel hidden" x="820" y="58">
+          Retorno ao TMS/ERP: número do CIOT e/ou Vale-Pedágio para inclusão no MDF-e
+        </text>
       </svg>
 
       <div class="card start"><div class="title">Início</div><div class="sub">Demanda de transporte</div></div>
@@ -221,7 +239,7 @@ path.hidden,line.hidden{opacity:0}
       <div class="card auto stepPay" data-step="pagamento"><div class="title">Programar pagamento</div><div class="sub">Frete, parcelas e forma de liquidação</div></div>
       <div class="card auto stepVpo" data-step="vpo"><div class="title">Comprar VPO</div><div class="sub">Vale-pedágio por TAG ou cartão</div></div>
 
-      <div class="card auto status"><div class="title">Atualizar status</div><div class="sub">Retorno, comprovantes e acompanhamento</div></div>
+      <div class="card auto status"><div class="title">Atualizar status</div><div class="sub" id="statusSub">Retorno, comprovantes e acompanhamento</div></div>
       <div class="card end"><div class="title">Fim</div><div class="sub">Operação concluída</div></div>
 
       <div class="note" id="modeNote"><b>Integração:</b> o TMS/ERP do cliente envia os dados ao NDD Cargo. Após o recebimento, o processamento ocorre sem ação operacional manual.</div>
@@ -250,6 +268,7 @@ function applyFlow(){
   const isPortal = origin === "portal";
   setHidden(".portalUser,.portalCargo,#l-start-portal,#l-user-portal,#l-portal-data", !isPortal);
   setHidden(".erpClient,.integrationCargo,#l-start-int,#l-erp-cargo,#l-int-data", isPortal);
+  setHidden("#l-return-tms,#txt-return-tms", isPortal);
 
   document.querySelectorAll("[data-step]").forEach(el=>{
     el.classList.toggle("hidden", !cfg.steps.includes(el.dataset.step));
@@ -270,6 +289,7 @@ function applyFlow(){
   if(isPortal){
     document.getElementById("dataSub").textContent = "Informado manualmente pelo usuário no Portal";
     document.getElementById("validateSub").textContent = "Validação após acionamento manual no Portal";
+    document.getElementById("statusSub").textContent = "Consulta de status e comprovantes no Portal";
     document.getElementById("modeNote").innerHTML = `<b>Portal:</b> modelo ${modelLabel} com ${cfg.label}. O usuário acessa o Portal NDD Cargo, informa os dados e aciona manualmente emissão, pagamento e/ou VPO conforme o serviço selecionado.`;
     document.querySelectorAll(".stepCiot,.stepPay,.stepVpo").forEach(el=>{
       el.classList.remove("auto");
@@ -281,7 +301,20 @@ function applyFlow(){
   } else {
     document.getElementById("dataSub").textContent = "Recebido automaticamente do TMS/ERP do cliente";
     document.getElementById("validateSub").textContent = "Validação automática após recebimento dos dados";
-    document.getElementById("modeNote").innerHTML = `<b>Integração:</b> modelo ${modelLabel} com ${cfg.label}. O TMS/ERP do cliente se conecta ao NDD Cargo e envia a operação. Após o recebimento, o processamento segue sem ação operacional manual.`;
+    const retornoStatus = service === "vpo"
+      ? "Após concluir, retorna ao TMS/ERP o número do Vale-Pedágio para inclusão no MDF-e"
+      : service === "ciot" || service === "ciot-pagamento"
+        ? "Após concluir, retorna ao TMS/ERP o número do CIOT para inclusão no MDF-e"
+        : "Após concluir, retorna ao TMS/ERP o número do CIOT e/ou Vale-Pedágio para inclusão no MDF-e";
+    document.getElementById("statusSub").textContent = retornoStatus;
+
+    const retornoLabel = service === "vpo"
+      ? "Retorno ao TMS/ERP: número do Vale-Pedágio para inclusão no MDF-e"
+      : service === "ciot" || service === "ciot-pagamento"
+        ? "Retorno ao TMS/ERP: número do CIOT para inclusão no MDF-e"
+        : "Retorno ao TMS/ERP: número do CIOT e/ou Vale-Pedágio para inclusão no MDF-e";
+    document.getElementById("txt-return-tms").textContent = retornoLabel;
+    document.getElementById("modeNote").innerHTML = `<b>Integração:</b> modelo ${modelLabel} com ${cfg.label}. O TMS/ERP do cliente se conecta ao NDD Cargo e envia a operação. Após o recebimento, o processamento segue sem ação operacional manual. Ao concluir, o retorno da emissão informa ao TMS/ERP o número do CIOT e/ou Vale-Pedágio para inclusão no MDF-e.`;
     document.querySelectorAll(".stepCiot,.stepPay,.stepVpo").forEach(el=>{
       el.classList.remove("manual");
       el.classList.add("auto");
