@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=0.75" />
+<title>Fluxogramas Interativos — NDD Move e NDD Cargo</title>
+<style>
+:root{
+  --bg:#08111f; --panel:#0e1b2e; --card:#13243b; --card2:#172b46;
+  --line:#7dd3fc; --text:#e6f1ff; --muted:#9fb4cc; --accent:#38bdf8;
+  --auto:#22c55e; --manual:#f59e0b; --erp:#a855f7; --driver:#06b6d4;
+}
+*{box-sizing:border-box}
+body{
+  margin:0; min-height:100vh; color:var(--text);
+  font-family:Inter,Segoe UI,Roboto,Arial,sans-serif;
+  transition:background .35s ease;
+}
+body[data-product="move"]{
+  background:
+    radial-gradient(circle at 20% 10%, #2aa36f 0, transparent 34%),
+    radial-gradient(circle at 82% 28%, rgba(46,220,156,.12) 0, transparent 28%),
+    linear-gradient(135deg,#050b15,#0a1422 45%,#0a1620);
+}
+body[data-product="cargo"]{
+  background:
+    radial-gradient(circle at 20% 10%, #173257 0, transparent 34%),
+    radial-gradient(circle at 82% 28%, #0f766e44 0, transparent 28%),
+    linear-gradient(135deg,#050b15,#0b1425 45%,#09111f);
+}
+.wrap{width:100vw;max-width:none;margin:0;padding:24px;overflow:visible}
+.header{display:flex;justify-content:space-between;gap:20px;align-items:flex-start;margin-bottom:18px}
+.heading{min-width:280px}
+h1{font-size:clamp(22px,3vw,36px);margin:0 0 8px;font-weight:800;letter-spacing:-.03em}
+p{margin:0;color:var(--muted);line-height:1.45}
+.controls{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end;justify-content:flex-end}
+.productControls{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end;justify-content:flex-end}
+.controlGroup{border:1px solid #284565;background:#0d1a2c;border-radius:18px;padding:12px;min-width:210px;transition:.25s ease}
+.controlGroup.productChooser{min-width:220px}
+.controlGroup label{display:block;font-size:12px;color:#9fcfff;font-weight:800;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px}
+select{
+  width:100%;appearance:none;border:1px solid #315575;background:#071426;color:#e6f1ff;
+  border-radius:12px;padding:10px 12px;font-size:15px;font-weight:800;outline:none;
+}
+select:focus{border-color:#38bdf8;box-shadow:0 0 0 2px rgba(56,189,248,.18)}
+.reset{appearance:none;border:1px solid #315575;background:#0c1a2c;color:#dbeafe;border-radius:14px;padding:12px 16px;font-weight:800;cursor:pointer}
+.reset:hover{border-color:#38bdf8}
+body[data-product="move"] .productChooser{border-color:rgba(34,197,94,.58);box-shadow:0 0 0 2px rgba(34,197,94,.08)}
+body[data-product="cargo"] .productChooser{border-color:rgba(56,189,248,.58);box-shadow:0 0 0 2px rgba(56,189,248,.08)}
+
+.canvas{
+  position:relative;overflow:auto;border:0;border-radius:0;
+  background:linear-gradient(180deg,rgba(13,27,46,.82),rgba(8,17,31,.92));
+  box-shadow:none;padding:52px 64px;min-height:calc(100vh - 126px);width:100%;
+}
+.productPage{position:relative}
+.flow{position:relative;min-width:2240px;height:760px}
+.flow.integration{min-width:2360px;height:860px}
+.hidden{display:none!important}
+.card{
+  position:absolute;width:220px;min-height:130px;border-radius:20px;padding:18px 17px;
+  background:linear-gradient(180deg,var(--card2),var(--card));
+  border:1px solid #284765;box-shadow:0 16px 35px rgba(0,0,0,.28);
+  display:flex;flex-direction:column;justify-content:center;align-items:center;
+  text-align:center;transition:.25s ease;cursor:default;
+}
+.card .title{font-weight:800;font-size:22.5px;line-height:1.12}
+.card .sub{font-size:18px;color:var(--muted);margin-top:9px;line-height:1.22}
+.card.manual{border-color:#f59e0b;background:linear-gradient(180deg,#3b2612,#23180d);box-shadow:0 0 0 2px rgba(245,158,11,.16),0 18px 44px rgba(245,158,11,.10)}
+.card.manual::after{content:"Manual";position:absolute;top:-12px;right:14px;padding:4px 9px;border-radius:999px;background:#3b2607;border:1px solid #f59e0b;color:#fde68a;font-size:12px;font-weight:800}
+.card.auto{border-color:#22c55e;background:linear-gradient(180deg,#123b2a,#0d2b22);box-shadow:0 0 0 2px rgba(34,197,94,.18),0 18px 44px rgba(34,197,94,.12)}
+#movePage .card.auto::after{content:"NDD Move"}
+#cargoPage .card.auto::after{content:"NDD Cargo"}
+.card.auto::after{position:absolute;top:-12px;right:14px;padding:4px 9px;border-radius:999px;background:#052e1a;border:1px solid #22c55e;color:#bbf7d0;font-size:12px;font-weight:800}
+.card.erp{border-color:#a855f7;background:linear-gradient(180deg,#2b1948,#1d1234);box-shadow:0 0 0 2px rgba(168,85,247,.18),0 18px 44px rgba(168,85,247,.12)}
+.card.erp::after{content:"Cliente";position:absolute;top:-12px;right:14px;padding:4px 9px;border-radius:999px;background:#24103e;border:1px solid #a855f7;color:#e9d5ff;font-size:12px;font-weight:800}
+.card.driver{border-color:#06b6d4;background:linear-gradient(180deg,#103342,#092633);box-shadow:0 0 0 2px rgba(6,182,212,.18),0 18px 44px rgba(6,182,212,.12)}
+.card.driver::after{content:"Motorista";position:absolute;top:-12px;right:14px;padding:4px 9px;border-radius:999px;background:#083344;border:1px solid #06b6d4;color:#cffafe;font-size:12px;font-weight:800}
+
+/* NDD MOVE — Portal */
+#movePortalFlow .portalUser{left:120px;top:304px}
+#movePortalFlow .portalMove{left:430px;top:304px}
+#movePortalFlow .create{left:740px;top:304px}
+#movePortalFlow .validate{left:1050px;top:304px}
+#movePortalFlow .dispatch{left:1360px;top:304px}
+#movePortalFlow .execute{left:1670px;top:304px}
+#movePortalFlow .monitor{left:1980px;top:304px}
+#movePortalFlow .note{position:absolute;left:740px;top:560px;width:860px;border:1px dashed #8a5b12;border-radius:18px;padding:16px 18px;background:rgba(59,38,7,.28);color:#fde68a;font-size:17px;line-height:1.36}
+
+/* Estrutura comum das integrações */
+.integrationShell{
+  position:absolute;left:10px;top:8px;width:2280px;height:820px;border-radius:28px;
+  border:1px solid rgba(125,211,252,.12);background:rgba(3,10,22,.18);
+}
+.integrationShell .topArea{position:absolute;left:0;right:0;top:0;height:250px;border-radius:28px 28px 0 0;background:linear-gradient(180deg,rgba(168,85,247,.10),rgba(168,85,247,.03))}
+.integrationShell .bottomArea{position:absolute;left:0;right:0;top:250px;bottom:0;border-radius:0 0 28px 28px;background:linear-gradient(180deg,rgba(34,197,94,.07),rgba(34,197,94,.02))}
+.integrationShell .divider{position:absolute;left:0;right:0;top:250px;border-top:1px solid rgba(125,211,252,.34);box-shadow:0 0 20px rgba(125,211,252,.10)}
+.laneTitle{position:absolute;left:30px;font-size:18px;font-weight:900;color:#cce7ff;letter-spacing:.08em;text-transform:uppercase;background:rgba(8,17,31,.95);border:1px solid rgba(125,211,252,.22);border-radius:999px;padding:8px 14px;z-index:2}
+.laneTopTitle{top:22px}.laneBottomTitle{top:272px}
+.integrationBenefit{position:absolute;left:30px;top:470px;width:520px;border:1px solid rgba(34,197,94,.38);border-radius:18px;padding:16px 18px;background:rgba(5,46,26,.33);color:#bbf7d0;font-size:16px;line-height:1.45;box-shadow:0 18px 44px rgba(34,197,94,.10);z-index:3}
+.integrationBenefit b{color:#86efac;font-size:17px}
+.returnBadge{position:absolute;top:58px;color:#e9d5ff;font-size:18px;font-weight:900;background:rgba(36,16,62,.88);border:1px solid rgba(168,85,247,.42);border-radius:999px;padding:10px 16px;z-index:3}
+
+/* NDD MOVE — Integração */
+#moveIntegrationFlow .returnBadge{left:870px}
+#moveIntegrationFlow .erpClient{left:300px;top:78px;width:250px}
+#moveIntegrationFlow .integrationMove{left:300px;top:324px;width:250px}
+#moveIntegrationFlow .create{left:650px;top:465px;width:250px}
+#moveIntegrationFlow .validate{left:970px;top:465px;width:250px}
+#moveIntegrationFlow .dispatch{left:1290px;top:465px;width:250px}
+#moveIntegrationFlow .execute{left:1610px;top:465px;width:250px}
+#moveIntegrationFlow .monitor{left:1930px;top:465px;width:250px}
+#moveIntegrationFlow .note{position:absolute;left:650px;top:670px;width:900px;border:1px dashed #2c5c4a;border-radius:18px;padding:16px 18px;background:rgba(5,46,26,.28);color:#c9fdda;font-size:17px;line-height:1.36}
+#moveIntegrationFlow .note b{color:#86efac}
+
+/* NDD CARGO — Portal */
+#cargoPortalFlow .start{left:20px;top:304px;width:150px;min-height:112px}
+#cargoPortalFlow .portalUser{left:240px;top:244px}
+#cargoPortalFlow .portalCargo{left:520px;top:244px}
+#cargoPortalFlow .data{left:820px;top:304px;width:240px}
+#cargoPortalFlow .validate{left:1130px;top:304px;width:240px}
+#cargoPortalFlow .stepCiot{left:1440px;top:150px}
+#cargoPortalFlow .stepPay{left:1440px;top:304px}
+#cargoPortalFlow .stepVpo{left:1440px;top:458px}
+#cargoPortalFlow .status{left:1740px;top:304px;width:240px}
+#cargoPortalFlow .end{left:2050px;top:304px;width:150px;min-height:112px}
+#cargoPortalFlow .serviceTag{position:absolute;left:1440px;top:96px;width:520px;color:#9fcfff;font-size:15px;font-weight:800;text-transform:uppercase;letter-spacing:.06em}
+#cargoPortalFlow .note{position:absolute;left:820px;top:595px;width:520px;border:1px dashed #8a5b12;border-radius:18px;padding:16px 18px;background:rgba(59,38,7,.28);color:#fde68a;font-size:17px;line-height:1.36}
+
+/* NDD CARGO — Integração */
+#cargoIntegrationFlow .returnBadge{left:860px}
+#cargoIntegrationFlow .start{left:40px;top:465px;width:150px;min-height:112px}
+#cargoIntegrationFlow .erpClient{left:300px;top:78px;width:250px}
+#cargoIntegrationFlow .integrationCargo{left:300px;top:324px;width:250px}
+#cargoIntegrationFlow .data{left:650px;top:465px;width:250px}
+#cargoIntegrationFlow .validate{left:970px;top:465px;width:250px}
+#cargoIntegrationFlow .stepCiot{left:1290px;top:330px}
+#cargoIntegrationFlow .stepPay{left:1290px;top:485px}
+#cargoIntegrationFlow .stepVpo{left:1290px;top:640px}
+#cargoIntegrationFlow .status{left:1600px;top:465px;width:250px}
+#cargoIntegrationFlow .end{left:1950px;top:465px;width:150px;min-height:112px}
+#cargoIntegrationFlow .serviceTag{position:absolute;left:1290px;top:276px;width:520px;color:#9fcfff;font-size:15px;font-weight:800;text-transform:uppercase;letter-spacing:.06em}
+#cargoIntegrationFlow .note{position:absolute;left:650px;top:650px;width:520px;border:1px dashed #2c5c4a;border-radius:18px;padding:16px 18px;background:rgba(5,46,26,.28);color:#c9fdda;font-size:17px;line-height:1.36}
+#cargoIntegrationFlow .note b{color:#86efac}
+
+svg.arrows{position:absolute;left:0;top:0;pointer-events:none;overflow:visible}
+path,line{stroke:var(--line);stroke-width:3;fill:none;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 0 3px rgba(125,211,252,.18));transition:.25s ease}
+path.autoLine,line.autoLine{stroke:var(--auto);stroke-width:3.2;filter:drop-shadow(0 0 4px rgba(34,197,94,.18))}
+path.manualLine,line.manualLine{stroke:var(--manual);stroke-width:3.2;filter:drop-shadow(0 0 4px rgba(245,158,11,.16))}
+path.erpLine,line.erpLine{stroke:var(--erp);stroke-width:3.2;filter:drop-shadow(0 0 4px rgba(168,85,247,.16))}
+path.driverLine,line.driverLine{stroke:var(--driver);stroke-width:3.2;filter:drop-shadow(0 0 4px rgba(6,182,212,.18))}
+path.returnLine{stroke:#a855f7;stroke-width:3;stroke-dasharray:7 7;fill:none;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 0 4px rgba(168,85,247,.18))}
+.lineHidden{opacity:0!important}
+
+@media(max-width:1180px){
+  .header{display:block}.controls{justify-content:flex-start;margin-top:16px}.productControls{justify-content:flex-start}
+}
+@media(max-width:760px){
+  .wrap{padding:14px}.controlGroup{min-width:100%}.productControls{width:100%}.controls{width:100%}
+  .canvas{padding:28px 26px;min-height:calc(100vh - 220px)}
+  .flow{transform-origin:0 0;transform:scale(.62);height:1180px}
+}
+</style>
+</head>
+<body data-product="move">
+<div class="wrap">
+  <div class="header">
+    <div class="heading">
+      <h1 id="pageTitle">Fluxograma Interativo — NDD Move</h1>
+      <p id="pageSubtitle">Selecione a origem da alimentação. O fluxo macro da operação permanece o mesmo.</p>
+    </div>
+
+    <div class="controls">
+      <div class="controlGroup productChooser">
+        <label for="productSelect">Produto</label>
+        <select id="productSelect" onchange="applyProduct()">
+          <option value="move">NDD Move</option>
+          <option value="cargo">NDD Cargo</option>
+        </select>
+      </div>
+
+      <div class="productControls" id="moveControls">
+        <div class="controlGroup">
+          <label for="moveOriginSelect">Origem da alimentação</label>
+          <select id="moveOriginSelect" onchange="applyMoveFlow()">
+            <option value="portal">Portal</option>
+            <option value="integracao">Integração</option>
+          </select>
+        </div>
+        <button class="reset" onclick="resetMoveFlow()">Padrão</button>
+      </div>
+
+      <div class="productControls hidden" id="cargoControls">
+        <div class="controlGroup">
+          <label for="cargoOriginSelect">Origem da emissão</label>
+          <select id="cargoOriginSelect" onchange="applyCargoFlow()">
+            <option value="portal">Portal</option>
+            <option value="integracao">Integração</option>
+          </select>
+        </div>
+        <div class="controlGroup">
+          <label for="cargoModelSelect">Modelo de emissão</label>
+          <select id="cargoModelSelect" onchange="applyCargoFlow()">
+            <option value="geral">Geral</option>
+            <option value="especifico">Específico</option>
+            <option value="especifico-lotacao">Específico + Lotação</option>
+          </select>
+        </div>
+        <div class="controlGroup">
+          <label for="cargoServiceSelect">O que emitir</label>
+          <select id="cargoServiceSelect" onchange="applyCargoFlow()">
+            <option value="geral">CIOT + Pagamento + VPO</option>
+            <option value="ciot-pagamento">CIOT + Pagamento</option>
+            <option value="ciot-vpo">CIOT + VPO</option>
+            <option value="ciot">Somente CIOT</option>
+            <option value="vpo">Somente VPO</option>
+          </select>
+        </div>
+        <button class="reset" onclick="resetCargoFlow()">Padrão</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="canvas">
+    <section class="productPage" id="movePage">
+      <div class="flow" id="movePortalFlow">
+        <svg class="arrows" width="2240" height="720" viewBox="0 0 2240 720">
+          <defs>
+            <marker id="arrowManualMP" markerWidth="7" markerHeight="7" viewBox="0 0 10 10" refX="8.4" refY="5" orient="auto" markerUnits="strokeWidth"><path d="M2 1.8 L8 5 L2 8.2" fill="none" stroke="#f59e0b" stroke-width="1.6"/></marker>
+            <marker id="arrowAutoMP" markerWidth="7" markerHeight="7" viewBox="0 0 10 10" refX="8.4" refY="5" orient="auto" markerUnits="strokeWidth"><path d="M2 1.8 L8 5 L2 8.2" fill="none" stroke="#22c55e" stroke-width="1.6"/></marker>
+            <marker id="arrowDriverMP" markerWidth="7" markerHeight="7" viewBox="0 0 10 10" refX="8.4" refY="5" orient="auto" markerUnits="strokeWidth"><path d="M2 1.8 L8 5 L2 8.2" fill="none" stroke="#06b6d4" stroke-width="1.6"/></marker>
+          </defs>
+          <path class="manualLine" d="M340 369 L422 369" marker-end="url(#arrowManualMP)"/>
+          <path class="manualLine" d="M650 369 L732 369" marker-end="url(#arrowManualMP)"/>
+          <path class="autoLine" d="M960 369 L1042 369" marker-end="url(#arrowAutoMP)"/>
+          <path class="autoLine" d="M1270 369 L1352 369" marker-end="url(#arrowAutoMP)"/>
+          <path class="driverLine" d="M1580 369 L1662 369" marker-end="url(#arrowDriverMP)"/>
+          <path class="autoLine" d="M1890 369 L1972 369" marker-end="url(#arrowAutoMP)"/>
+        </svg>
+        <div class="card manual portalUser"><div class="title">Usuário</div><div class="sub">Alimenta a operação manualmente</div></div>
+        <div class="card manual portalMove"><div class="title">Portal NDD Move</div><div class="sub">Recebe os dados informados pelo usuário</div></div>
+        <div class="card auto create"><div class="title">Criar viagem</div><div class="sub">Centraliza os dados da operação logística</div></div>
+        <div class="card auto validate"><div class="title">Validar e disponibilizar</div><div class="sub">Processa a viagem e a disponibiliza para execução</div></div>
+        <div class="card driver dispatch"><div class="title">Executar viagem</div><div class="sub">Motorista realiza a operação no aplicativo</div></div>
+        <div class="card auto execute"><div class="title">Registrar execução</div><div class="sub">Atualiza entregas, coletas, ocorrências e comprovações</div></div>
+        <div class="card auto monitor"><div class="title">Monitorar e finalizar</div><div class="sub">Backoffice acompanha a operação e sua rastreabilidade</div></div>
+        <div class="note"><b>Portal:</b> a alimentação dos dados é manual. Depois da criação da viagem, o fluxo operacional é o mesmo utilizado na integração.</div>
+      </div>
+
+      <div class="flow integration hidden" id="moveIntegrationFlow">
+        <div class="integrationShell">
+          <div class="topArea"></div><div class="bottomArea"></div><div class="divider"></div>
+          <div class="laneTitle laneTopTitle">TMS / ERP do Cliente</div>
+          <div class="laneTitle laneBottomTitle">NDD Move</div>
+          <div class="returnBadge">Retorno ao TMS/ERP: status, eventos e dados da execução</div>
+          <div class="integrationBenefit"><b>Integração</b><br><br>• Alimentação automática da viagem<br>• Menor intervenção operacional<br>• Redução de digitação e retrabalho<br>• Atualização de status e eventos<br>• Rastreabilidade da operação<br>• Portal disponível para operação manual</div>
+        </div>
+        <svg class="arrows" width="2360" height="840" viewBox="0 0 2360 840">
+          <defs>
+            <marker id="arrowAutoMI" markerWidth="7" markerHeight="7" viewBox="0 0 10 10" refX="8.4" refY="5" orient="auto" markerUnits="strokeWidth"><path d="M2 1.8 L8 5 L2 8.2" fill="none" stroke="#22c55e" stroke-width="1.6"/></marker>
+            <marker id="arrowErpMI" markerWidth="7" markerHeight="7" viewBox="0 0 10 10" refX="8.4" refY="5" orient="auto" markerUnits="strokeWidth"><path d="M2 1.8 L8 5 L2 8.2" fill="none" stroke="#a855f7" stroke-width="1.6"/></marker>
+            <marker id="arrowDriverMI" markerWidth="7" markerHeight="7" viewBox="0 0 10 10" refX="8.4" refY="5" orient="auto" markerUnits="strokeWidth"><path d="M2 1.8 L8 5 L2 8.2" fill="none" stroke="#06b6d4" stroke-width="1.6"/></marker>
+          </defs>
+          <path class="erpLine" d="M550 143 C600 143,600 389,300 389" marker-end="url(#arrowErpMI)"/>
+          <path class="autoLine" d="M550 389 C600 389,600 530,650 530" marker-end="url(#arrowAutoMI)"/>
+          <path class="autoLine" d="M900 530 L962 530" marker-end="url(#arrowAutoMI)"/>
+          <path class="autoLine" d="M1220 530 L1282 530" marker-end="url(#arrowAutoMI)"/>
+          <path class="driverLine" d="M1540 530 L1602 530" marker-end="url(#arrowDriverMI)"/>
+          <path class="autoLine" d="M1860 530 L1922 530" marker-end="url(#arrowAutoMI)"/>
+          <path class="returnLine" d="M2055 465 C2055 116,790 116,550 143" marker-end="url(#arrowErpMI)"/>
+        </svg>
+        <div class="card erp erpClient"><div class="title">TMS / ERP do cliente</div><div class="sub">Origina e envia automaticamente os dados</div></div>
+        <div class="card auto integrationMove"><div class="title">Receber operação</div><div class="sub">NDD Move recebe os dados pela integração</div></div>
+        <div class="card auto create"><div class="title">Criar viagem</div><div class="sub">Centraliza os dados da operação logística</div></div>
+        <div class="card auto validate"><div class="title">Validar e disponibilizar</div><div class="sub">Processa a viagem e a disponibiliza para execução</div></div>
+        <div class="card driver dispatch"><div class="title">Executar viagem</div><div class="sub">Motorista realiza a operação no aplicativo</div></div>
+        <div class="card auto execute"><div class="title">Registrar execução</div><div class="sub">Atualiza entregas, coletas, ocorrências e comprovações</div></div>
+        <div class="card auto monitor"><div class="title">Monitorar e finalizar</div><div class="sub">Backoffice acompanha a operação e sua rastreabilidade</div></div>
+        <div class="note"><b>Integração:</b> a alimentação dos dados é automática. Depois da criação da viagem, o fluxo operacional é o mesmo utilizado no Portal.</div>
+      </div>
+    </section>
+
+    <section class="productPage hidden" id="cargoPage">
+      <div class="flow" id="cargoPortalFlow">
+        <svg class="arrows" width="2240" height="720" viewBox="0 0 2240 720">
+          <defs>
+            <marker id="arrowCP" markerWidth="7" markerHeight="7" viewBox="0 0 10 10" refX="8.4" refY="5" orient="auto" markerUnits="strokeWidth"><path d="M2 1.8 L8 5 L2 8.2" fill="none" stroke="#7dd3fc" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></marker>
+            <marker id="arrowManualCP" markerWidth="7" markerHeight="7" viewBox="0 0 10 10" refX="8.4" refY="5" orient="auto" markerUnits="strokeWidth"><path d="M2 1.8 L8 5 L2 8.2" fill="none" stroke="#f59e0b" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></marker>
+          </defs>
+          <path class="manualLine" d="M460 307 L512 307" marker-end="url(#arrowManualCP)"/>
+          <path class="manualLine" d="M740 307 C780 307,780 360,820 360" marker-end="url(#arrowManualCP)"/>
+          <path class="manualLine" d="M1060 360 L1122 360" marker-end="url(#arrowManualCP)"/>
+          <path id="cp-val-ciot" class="manualLine" d="M1370 360 C1405 360,1405 214,1440 214" marker-end="url(#arrowManualCP)"/>
+          <path id="cp-val-pay" class="manualLine" d="M1370 360 L1440 360" marker-end="url(#arrowManualCP)"/>
+          <path id="cp-val-vpo" class="manualLine" d="M1370 360 C1405 360,1405 522,1440 522" marker-end="url(#arrowManualCP)"/>
+          <path id="cp-ciot-status" class="manualLine" d="M1660 214 C1700 214,1700 360,1740 360" marker-end="url(#arrowManualCP)"/>
+          <path id="cp-pay-status" class="manualLine" d="M1660 360 L1740 360" marker-end="url(#arrowManualCP)"/>
+          <path id="cp-vpo-status" class="manualLine" d="M1660 522 C1700 522,1700 360,1740 360" marker-end="url(#arrowManualCP)"/>
+          <path d="M1980 360 L2042 360" marker-end="url(#arrowCP)"/>
+        </svg>
+        <div class="card manual portalUser"><div class="title">Usuário</div><div class="sub">Acessa e opera manualmente</div></div>
+        <div class="card manual portalCargo"><div class="title">Portal NDD Cargo</div><div class="sub">Preenchimento e acionamento manual</div></div>
+        <div class="card data"><div class="title">Dados da operação</div><div class="sub">Informado manualmente pelo usuário no Portal</div></div>
+        <div class="card auto validate"><div class="title">Validar operação</div><div class="sub">Validação após acionamento manual no Portal</div></div>
+        <div class="serviceTag" id="cargoPortalServiceTag">Serviços selecionados: CIOT + Pagamento + VPO</div>
+        <div class="card manual stepCiot" data-step="ciot"><div class="title">Gerar CIOT</div><div class="sub">Usuário aciona a emissão no Portal</div></div>
+        <div class="card manual stepPay" data-step="pagamento"><div class="title">Programar pagamento</div><div class="sub">Usuário informa e agenda no Portal</div></div>
+        <div class="card manual stepVpo" data-step="vpo"><div class="title">Comprar VPO</div><div class="sub">Usuário aciona vale-pedágio</div></div>
+        <div class="card auto status"><div class="title">Atualizar status</div><div class="sub">Consulta de status e comprovantes no Portal</div></div>
+        <div class="card end"><div class="title">Fim</div><div class="sub">Operação concluída</div></div>
+        <div class="note" id="cargoPortalNote"><b>Portal:</b> o usuário acessa o Portal NDD Cargo, informa os dados e aciona manualmente emissão, pagamento e/ou VPO conforme o serviço selecionado.</div>
+      </div>
+
+      <div class="flow integration hidden" id="cargoIntegrationFlow">
+        <div class="integrationShell">
+          <div class="topArea"></div><div class="bottomArea"></div><div class="divider"></div>
+          <div class="laneTitle laneTopTitle">TMS / ERP do Cliente</div>
+          <div class="laneTitle laneBottomTitle">NDD Cargo</div>
+          <div class="returnBadge" id="cargoReturnBadge">Retorno ao TMS/ERP: número do CIOT e/ou Vale-Pedágio para inclusão no MDF-e</div>
+          <div class="integrationBenefit">
+            <b>Pontos positivos via integração</b><br><br>
+            • Sem ação operacional manual<br>
+            • Emissão automática de CIOT<br>
+            <span id="cargoBenefitVPO">• Emissão automática de Vale-Pedágio (VPO)<br></span>
+            <span id="cargoBenefitPAY">• Programação automática do pagamento de frete<br></span>
+            • Cadastro automático de transportadores, veículos e condutores<br>
+            • Informações prontas para composição do MDF-e<br>
+            • Redução de erros de digitação e retrabalho<br>
+            • Maior produtividade da equipe operacional<br>
+            • Integração transparente entre TMS/ERP e NDD Cargo<br>
+            • Portal NDD Cargo permanece disponível como contingência operacional
+          </div>
+        </div>
+        <svg class="arrows" width="2360" height="840" viewBox="0 0 2360 840">
+          <defs>
+            <marker id="arrowCI" markerWidth="7" markerHeight="7" viewBox="0 0 10 10" refX="8.4" refY="5" orient="auto" markerUnits="strokeWidth"><path d="M2 1.8 L8 5 L2 8.2" fill="none" stroke="#7dd3fc" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></marker>
+            <marker id="arrowAutoCI" markerWidth="7" markerHeight="7" viewBox="0 0 10 10" refX="8.4" refY="5" orient="auto" markerUnits="strokeWidth"><path d="M2 1.8 L8 5 L2 8.2" fill="none" stroke="#22c55e" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></marker>
+            <marker id="arrowErpCI" markerWidth="7" markerHeight="7" viewBox="0 0 10 10" refX="8.4" refY="5" orient="auto" markerUnits="strokeWidth"><path d="M2 1.8 L8 5 L2 8.2" fill="none" stroke="#a855f7" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></marker>
+          </defs>
+          <path class="erpLine" d="M550 143 C600 143,600 389,300 389" marker-end="url(#arrowErpCI)"/>
+          <path class="autoLine" d="M550 389 C600 389,600 520,650 520" marker-end="url(#arrowAutoCI)"/>
+          <path class="autoLine" d="M900 520 L962 520" marker-end="url(#arrowAutoCI)"/>
+          <path id="ci-val-ciot" class="autoLine" d="M1220 520 C1260 520,1260 395,1290 395" marker-end="url(#arrowAutoCI)"/>
+          <path id="ci-val-pay" class="autoLine" d="M1220 520 L1282 520" marker-end="url(#arrowAutoCI)"/>
+          <path id="ci-val-vpo" class="autoLine" d="M1220 520 C1260 520,1260 705,1290 705" marker-end="url(#arrowAutoCI)"/>
+          <path id="ci-ciot-status" class="autoLine" d="M1510 395 C1560 395,1560 520,1600 520" marker-end="url(#arrowAutoCI)"/>
+          <path id="ci-pay-status" class="autoLine" d="M1510 520 L1592 520" marker-end="url(#arrowAutoCI)"/>
+          <path id="ci-vpo-status" class="autoLine" d="M1510 705 C1560 705,1560 520,1600 520" marker-end="url(#arrowAutoCI)"/>
+          <path class="autoLine" d="M1850 520 L1942 520" marker-end="url(#arrowAutoCI)"/>
+          <path class="returnLine" d="M1725 455 C1725 116,790 116,550 143" marker-end="url(#arrowErpCI)"/>
+        </svg>
+        <div class="card erp erpClient"><div class="title">TMS/ERP do cliente</div><div class="sub">Origina e envia a operação</div></div>
+        <div class="card auto integrationCargo"><div class="title">Receber operação</div><div class="sub">NDD Cargo recebe os dados por integração</div></div>
+        <div class="card auto data"><div class="title">Dados da operação</div><div class="sub">Recebido automaticamente do TMS/ERP</div></div>
+        <div class="card auto validate"><div class="title">Validar operação</div><div class="sub">Validação automática dos dados</div></div>
+        <div class="serviceTag" id="cargoIntegrationServiceTag">Serviços selecionados: CIOT + Pagamento + VPO</div>
+        <div class="card auto stepCiot" data-step="ciot"><div class="title">Gerar CIOT</div><div class="sub">Sem ação operacional manual</div></div>
+        <div class="card auto stepPay" data-step="pagamento"><div class="title">Programar pagamento</div><div class="sub">Sem ação operacional manual</div></div>
+        <div class="card auto stepVpo" data-step="vpo"><div class="title">Comprar VPO</div><div class="sub">Sem ação operacional manual</div></div>
+        <div class="card auto status"><div class="title">Atualizar status</div><div class="sub" id="cargoIntegrationStatusSub">Retorna ao TMS/ERP número do CIOT/VPO</div></div>
+        <div class="card end"><div class="title">Fim</div><div class="sub">Operação concluída</div></div>
+        <div class="note" id="cargoIntegrationNote"><b>Integração:</b> o TMS/ERP do cliente envia a operação para o NDD Cargo. Todo o fluxo restante ocorre automaticamente no NDD Cargo.</div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<script>
+const cargoServiceMap = {
+  "geral": {
+    label:"CIOT + Pagamento + VPO",
+    steps:["ciot","pagamento","vpo"],
+    pLines:["cp-val-ciot","cp-val-pay","cp-val-vpo","cp-ciot-status","cp-pay-status","cp-vpo-status"],
+    iLines:["ci-val-ciot","ci-val-pay","ci-val-vpo","ci-ciot-status","ci-pay-status","ci-vpo-status"]
+  },
+  "ciot-pagamento": {
+    label:"CIOT + Pagamento",
+    steps:["ciot","pagamento"],
+    pLines:["cp-val-ciot","cp-val-pay","cp-ciot-status","cp-pay-status"],
+    iLines:["ci-val-ciot","ci-val-pay","ci-ciot-status","ci-pay-status"]
+  },
+  "ciot-vpo": {
+    label:"CIOT + VPO",
+    steps:["ciot","vpo"],
+    pLines:["cp-val-ciot","cp-val-vpo","cp-ciot-status","cp-vpo-status"],
+    iLines:["ci-val-ciot","ci-val-vpo","ci-ciot-status","ci-vpo-status"]
+  },
+  "ciot": {
+    label:"Somente CIOT",
+    steps:["ciot"],
+    pLines:["cp-val-ciot","cp-ciot-status"],
+    iLines:["ci-val-ciot","ci-ciot-status"]
+  },
+  "vpo": {
+    label:"Somente VPO",
+    steps:["vpo"],
+    pLines:["cp-val-vpo","cp-vpo-status"],
+    iLines:["ci-val-vpo","ci-vpo-status"]
+  }
+};
+
+function applyProduct(){
+  const product = document.getElementById("productSelect").value;
+  const isMove = product === "move";
+
+  document.body.dataset.product = product;
+  document.getElementById("movePage").classList.toggle("hidden", !isMove);
+  document.getElementById("cargoPage").classList.toggle("hidden", isMove);
+  document.getElementById("moveControls").classList.toggle("hidden", !isMove);
+  document.getElementById("cargoControls").classList.toggle("hidden", isMove);
+
+  document.getElementById("pageTitle").textContent = isMove
+    ? "Fluxograma Interativo — NDD Move"
+    : "Fluxograma Interativo — NDD Cargo";
+
+  document.getElementById("pageSubtitle").textContent = isMove
+    ? "Selecione a origem da alimentação. O fluxo macro da operação permanece o mesmo."
+    : "Selecione a origem, o modelo e o serviço. O fluxograma se adapta ao cenário escolhido.";
+
+  if(isMove) applyMoveFlow();
+  else applyCargoFlow();
+}
+
+function applyMoveFlow(){
+  const origin = document.getElementById("moveOriginSelect").value;
+  const isPortal = origin === "portal";
+  document.getElementById("movePortalFlow").classList.toggle("hidden", !isPortal);
+  document.getElementById("moveIntegrationFlow").classList.toggle("hidden", isPortal);
+}
+
+function resetMoveFlow(){
+  document.getElementById("moveOriginSelect").value = "portal";
+  applyMoveFlow();
+}
+
+function applyCargoFlow(){
+  const origin = document.getElementById("cargoOriginSelect").value;
+  const model = document.getElementById("cargoModelSelect").value;
+  const service = document.getElementById("cargoServiceSelect").value;
+  const cfg = cargoServiceMap[service];
+  const isPortal = origin === "portal";
+
+  document.getElementById("cargoPortalFlow").classList.toggle("hidden", !isPortal);
+  document.getElementById("cargoIntegrationFlow").classList.toggle("hidden", isPortal);
+
+  const modelLabel = {
+    "geral":"Geral",
+    "especifico":"Específico",
+    "especifico-lotacao":"Específico + Lotação"
+  }[model];
+
+  document.querySelectorAll("#cargoPortalFlow [data-step], #cargoIntegrationFlow [data-step]").forEach(el=>{
+    el.classList.toggle("hidden", !cfg.steps.includes(el.dataset.step));
+  });
+
+  document.querySelectorAll("#cargoPortalFlow path[id]").forEach(el=>{
+    if(el.id.startsWith("cp-")) el.classList.toggle("lineHidden", !cfg.pLines.includes(el.id));
+  });
+
+  document.querySelectorAll("#cargoIntegrationFlow path[id]").forEach(el=>{
+    if(el.id.startsWith("ci-")) el.classList.toggle("lineHidden", !cfg.iLines.includes(el.id));
+  });
+
+  document.getElementById("cargoPortalServiceTag").textContent = "Serviços selecionados: " + cfg.label;
+  document.getElementById("cargoIntegrationServiceTag").textContent = "Serviços selecionados: " + cfg.label;
+
+  const retorno = service === "vpo"
+    ? "Retorno ao TMS/ERP: número do Vale-Pedágio para inclusão no MDF-e"
+    : service === "ciot" || service === "ciot-pagamento"
+      ? "Retorno ao TMS/ERP: número do CIOT para inclusão no MDF-e"
+      : "Retorno ao TMS/ERP: número do CIOT e/ou Vale-Pedágio para inclusão no MDF-e";
+
+  document.getElementById("cargoReturnBadge").textContent = retorno;
+  document.getElementById("cargoIntegrationStatusSub").textContent = retorno.replace("Retorno ao TMS/ERP: ","Retorna ao TMS/ERP ");
+
+  const showVPO = ["geral","ciot-vpo","vpo"].includes(service);
+  const showPAY = ["geral","ciot-pagamento"].includes(service);
+  document.getElementById("cargoBenefitVPO").style.display = showVPO ? "" : "none";
+  document.getElementById("cargoBenefitPAY").style.display = showPAY ? "" : "none";
+
+  document.getElementById("cargoPortalNote").innerHTML = `<b>Portal:</b> modelo ${modelLabel} com ${cfg.label}. O usuário acessa o Portal NDD Cargo, informa os dados e aciona manualmente emissão, pagamento e/ou VPO conforme o serviço selecionado.`;
+  document.getElementById("cargoIntegrationNote").innerHTML = `<b>Integração:</b> modelo ${modelLabel} com ${cfg.label}. O TMS/ERP do cliente fica no espaço superior; o NDD Cargo e todo o fluxo restante ficam no espaço inferior, com processamento automático e retorno para inclusão no MDF-e.`;
+}
+
+function resetCargoFlow(){
+  document.getElementById("cargoOriginSelect").value = "portal";
+  document.getElementById("cargoModelSelect").value = "geral";
+  document.getElementById("cargoServiceSelect").value = "geral";
+  applyCargoFlow();
+}
+
+applyMoveFlow();
+applyCargoFlow();
+applyProduct();
+</script>
+</body>
+</html>
